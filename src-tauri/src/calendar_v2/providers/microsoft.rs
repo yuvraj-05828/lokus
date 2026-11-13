@@ -44,7 +44,10 @@ impl MicrosoftConnector {
         }
         let refresh = c.refresh.clone().ok_or(ConnectorError::AuthExpired)?;
         let client_id = std::env::var("MS_CLIENT_ID")
-            .map_err(|_| ConnectorError::Other("MS_CLIENT_ID not set".into()))?;
+            .ok()
+            .or_else(|| option_env!("MS_CLIENT_ID").map(|s| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| ConnectorError::Other("MS_CLIENT_ID not set".into()))?;
         let resp = self
             .http
             .post(TOKEN_URL)

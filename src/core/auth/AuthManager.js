@@ -254,6 +254,24 @@ class AuthManager {
    */
   async signInWithGoogle() {
     try {
+      const isLocalDev = import.meta.env.VITE_LOCAL_DEV_MODE === 'true' || 
+                         (import.meta.env.DEV && import.meta.env.VITE_SUPABASE_URL?.includes('dummy'));
+      if (isLocalDev) {
+        console.log('[AuthManager] Local dev mode enabled - bypassing Supabase authentication for Google');
+        this.user = {
+          id: 'local-dev-user',
+          email: 'dev@localhost',
+          user_metadata: { name: 'Local Developer' }
+        };
+        this.session = {
+          access_token: 'local-dev-token',
+          user: this.user
+        };
+        this.isAuthenticated = true;
+        this.notifyListeners();
+        return { data: { user: this.user, session: this.session } };
+      }
+
       // Use 127.0.0.1 callback for more reliable OAuth flow
       // (Safari blocks redirects to "localhost" from external HTTPS sites)
       // The OAuth server on port 9080 will handle the callback
@@ -269,6 +287,14 @@ class AuthManager {
       });
 
       if (error) {
+        if (
+          error.message?.includes('provider is not enabled') ||
+          error.error_code === 'validation_failed' ||
+          error.code === 400 ||
+          error.status === 400
+        ) {
+          throw new Error('Google Sign-In is not enabled on the authentication server. Please ensure the Google provider is configured or use email sign-in.');
+        }
         throw error;
       }
 
@@ -293,6 +319,24 @@ class AuthManager {
    */
   async signInWithApple() {
     try {
+      const isLocalDev = import.meta.env.VITE_LOCAL_DEV_MODE === 'true' || 
+                         (import.meta.env.DEV && import.meta.env.VITE_SUPABASE_URL?.includes('dummy'));
+      if (isLocalDev) {
+        console.log('[AuthManager] Local dev mode enabled - bypassing Supabase authentication for Apple');
+        this.user = {
+          id: 'local-dev-user',
+          email: 'dev@localhost',
+          user_metadata: { name: 'Local Developer' }
+        };
+        this.session = {
+          access_token: 'local-dev-token',
+          user: this.user
+        };
+        this.isAuthenticated = true;
+        this.notifyListeners();
+        return { data: { user: this.user, session: this.session } };
+      }
+
       const redirectUrl = 'http://127.0.0.1:9080/auth-callback';
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
@@ -301,7 +345,17 @@ class AuthManager {
           skipBrowserRedirect: true,
         },
       });
-      if (error) throw error;
+      if (error) {
+        if (
+          error.message?.includes('provider is not enabled') ||
+          error.error_code === 'validation_failed' ||
+          error.code === 400 ||
+          error.status === 400
+        ) {
+          throw new Error('Apple Sign-In is not enabled on the authentication server. Please ensure the Apple provider is configured or use email sign-in.');
+        }
+        throw error;
+      }
       if (data?.url) {
         console.log('[AuthManager] Opening Apple OAuth URL in browser');
         await open(data.url);
