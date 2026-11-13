@@ -44,8 +44,14 @@ impl GoogleConnector {
 
         let refresh = c.refresh.clone().ok_or(ConnectorError::AuthExpired)?;
         let client_id = std::env::var("GOOGLE_CLIENT_ID")
-            .map_err(|_| ConnectorError::Other("GOOGLE_CLIENT_ID not set".into()))?;
-        let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default();
+            .ok()
+            .or_else(|| option_env!("GOOGLE_CLIENT_ID").map(|s| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| ConnectorError::Other("GOOGLE_CLIENT_ID not set".into()))?;
+        let client_secret = std::env::var("GOOGLE_CLIENT_SECRET")
+            .ok()
+            .or_else(|| option_env!("GOOGLE_CLIENT_SECRET").map(|s| s.to_string()))
+            .unwrap_or_default();
 
         let mut form = vec![
             ("client_id", client_id),

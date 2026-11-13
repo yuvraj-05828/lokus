@@ -148,8 +148,11 @@ pub async fn cal2_account_add_google(
     app: AppHandle,
     store: State<'_, CalendarStore>,
 ) -> Result<String, String> {
-    let client_id =
-        std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set".to_string())?;
+    let client_id = std::env::var("GOOGLE_CLIENT_ID")
+        .ok()
+        .or_else(|| option_env!("GOOGLE_CLIENT_ID").map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "GOOGLE_CLIENT_ID not set".to_string())?;
 
     let flow_id = Uuid::new_v4().to_string();
     let pkce = auth::pkce_pair();
@@ -206,8 +209,15 @@ async fn finish_google_link(
     redirect: &str,
     store: &CalendarStore,
 ) -> Result<String, String> {
-    let client_id = std::env::var("GOOGLE_CLIENT_ID").map_err(|_| "GOOGLE_CLIENT_ID not set")?;
-    let client_secret = std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default();
+    let client_id = std::env::var("GOOGLE_CLIENT_ID")
+        .ok()
+        .or_else(|| option_env!("GOOGLE_CLIENT_ID").map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "GOOGLE_CLIENT_ID not set".to_string())?;
+    let client_secret = std::env::var("GOOGLE_CLIENT_SECRET")
+        .ok()
+        .or_else(|| option_env!("GOOGLE_CLIENT_SECRET").map(|s| s.to_string()))
+        .unwrap_or_default();
     let http = reqwest::Client::new();
 
     let mut form = vec![
@@ -297,7 +307,11 @@ pub async fn cal2_account_add_microsoft(
     store: State<'_, CalendarStore>,
 ) -> Result<String, String> {
     use super::providers::microsoft as ms;
-    let client_id = std::env::var("MS_CLIENT_ID").map_err(|_| "MS_CLIENT_ID not set".to_string())?;
+    let client_id = std::env::var("MS_CLIENT_ID")
+        .ok()
+        .or_else(|| option_env!("MS_CLIENT_ID").map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "MS_CLIENT_ID not set".to_string())?;
 
     let flow_id = Uuid::new_v4().to_string();
     let pkce = auth::pkce_pair();
@@ -350,7 +364,11 @@ async fn finish_microsoft_link(
     store: &CalendarStore,
 ) -> Result<String, String> {
     use super::providers::microsoft as ms;
-    let client_id = std::env::var("MS_CLIENT_ID").map_err(|_| "MS_CLIENT_ID not set")?;
+    let client_id = std::env::var("MS_CLIENT_ID")
+        .ok()
+        .or_else(|| option_env!("MS_CLIENT_ID").map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "MS_CLIENT_ID not set".to_string())?;
     let http = reqwest::Client::new();
 
     let body: serde_json::Value = http

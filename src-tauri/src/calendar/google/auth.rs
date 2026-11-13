@@ -25,10 +25,16 @@ pub struct PKCEData {
 impl GoogleCalendarAuth {
     pub fn new() -> Result<Self, CalendarError> {
         let client_id = std::env::var("GOOGLE_CLIENT_ID")
-            .map_err(|_| CalendarError::Auth("GOOGLE_CLIENT_ID environment variable not set".to_string()))?;
+            .ok()
+            .or_else(|| option_env!("GOOGLE_CLIENT_ID").map(|s| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| CalendarError::Auth("GOOGLE_CLIENT_ID environment variable not set".to_string()))?;
 
         let client_secret = std::env::var("GOOGLE_CLIENT_SECRET")
-            .map_err(|_| CalendarError::Auth("GOOGLE_CLIENT_SECRET environment variable not set".to_string()))?;
+            .ok()
+            .or_else(|| option_env!("GOOGLE_CLIENT_SECRET").map(|s| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| CalendarError::Auth("GOOGLE_CLIENT_SECRET environment variable not set".to_string()))?;
 
         // Use OAuth server port for callback (same as Gmail)
         let oauth_port = std::env::var("OAUTH_PORT")
